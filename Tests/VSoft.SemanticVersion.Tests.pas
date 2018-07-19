@@ -79,7 +79,7 @@ begin
   version := TSemanticVersion.Create(1,2,3,'Beta');
   Assert.AreEqual(version.Major,1);
   Assert.AreEqual(version.Minor,2);
-  Assert.AreEqual(version.Release,3);
+  Assert.AreEqual(version.Patch,3);
   Assert.AreEqual(version.PreReleaseLabel,'Beta');
   Assert.AreEqual<string>(version.ToString,'1.2.3-Beta');
 end;
@@ -91,7 +91,7 @@ begin
   version := TSemanticVersion.Create(1,2,3);
   Assert.AreEqual(version.Major,1);
   Assert.AreEqual(version.Minor,2);
-  Assert.AreEqual(version.Release,3);
+  Assert.AreEqual(version.Patch,3);
   Assert.AreEqual<string>(version.ToString,'1.2.3');
 end;
 
@@ -102,7 +102,7 @@ begin
   version := TSemanticVersion.Create(1,2);
   Assert.AreEqual(version.Major,1);
   Assert.AreEqual(version.Minor,2);
-  Assert.AreEqual(version.Release,0);
+  Assert.AreEqual(version.Patch,0);
   Assert.AreEqual<string>(version.ToString,'1.2.0');
 
 end;
@@ -137,7 +137,7 @@ begin
 
   Assert.AreEqual(1,version.Major);
   Assert.AreEqual(2,version.Minor);
-  Assert.AreEqual(3,version.Release);
+  Assert.AreEqual(3,version.Patch);
   Assert.AreEqual('Beta',version.PreReleaseLabel);
 end;
 
@@ -148,7 +148,7 @@ begin
   Assert.IsTrue(TSemanticVersion.TryParse('1.2.3',version));
   Assert.AreEqual(version.Major,1);
   Assert.AreEqual(version.Minor,2);
-  Assert.AreEqual(version.Release,3);
+  Assert.AreEqual(version.Patch,3);
 end;
 
 procedure TSemanticVersionTest.Can_Parse_String_with_two_components;

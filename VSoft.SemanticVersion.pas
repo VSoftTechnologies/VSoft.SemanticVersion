@@ -1,4 +1,4 @@
-{***************************************************************************}
+﻿{***************************************************************************}
 {                                                                           }
 {           VSoft.SemanticVErsion - Semantic Version Parsing                }
 {                                                                           }
@@ -60,7 +60,7 @@ type
 
     property Major    : Word read Elements[0];
     property Minor    : Word read Elements[1];
-    property Release  : Word read Elements[2];
+    property Patch  : Word read Elements[2];
     property PreReleaseLabel : string read FLabel write FLabel;
     property IsStable : boolean read GetIsStable;
     property IsEmpty  : boolean read GetIsEmpty;
@@ -75,7 +75,7 @@ uses
 
 function TSemanticVersion.Clone: TSemanticVersion;
 begin
-  result := TSemanticVersion.Create(Major, Minor, Release, PreReleaseLabel);
+  result := TSemanticVersion.Create(Major, Minor, Patch, PreReleaseLabel);
 end;
 
 function TSemanticVersion.CompareTo(const version: TSemanticVersion): integer;
@@ -132,7 +132,7 @@ end;
 
 function TSemanticVersion.GetIsEmpty: boolean;
 begin
-  result := (Major = 0) and (Minor = 0) and (Release = 0);
+  result := (Major = 0) and (Minor = 0) and (Patch = 0);
 end;
 
 function TSemanticVersion.GetIsStable: boolean;
@@ -237,9 +237,9 @@ begin
     Exit('');
 
   if FLabel = '' then
-    result := Format('%d.%d.%d',[Major, Minor, Release])
+    result := Format('%d.%d.%d',[Major, Minor, Patch])
   else
-    result := Format('%d.%d.%d-%s',[Major, Minor, Release,FLabel]);
+    result := Format('%d.%d.%d-%s',[Major, Minor, Patch,FLabel]);
 end;
 
 class function TSemanticVersion.TryParse(const version: string; out value: TSemanticVersion): boolean;
