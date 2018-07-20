@@ -39,9 +39,14 @@ type
 
 
     [TestCase('Case1','1.2.3,1.2.3')]
+    [TestCase('Case2','1.2.3+meta,1.2.3')]
+    [TestCase('Case3','1.2.3-beta,1.2.3-beta')]
+    [TestCase('Case4','1.2.3-beta+meta,1.2.3-beta')]
+    [TestCase('Case5','1.2.3-beta+meta,1.2.3-beta+meta')]
     procedure Are_Equal(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.0')]
+    [TestCase('Case2','1.2.3,1.2.3-beta')]
     procedure Are_Not_Equal(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.2')]
@@ -57,7 +62,7 @@ type
     procedure GreaterThanEqualTo(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.3')]
-    [TestCase('Case1','1.2.3,1.2.4')]
+    [TestCase('Case2','1.2.3,1.2.4')]
     procedure NotGreaterThan(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.4')]
@@ -76,7 +81,7 @@ type
     procedure LessThanEqualTo(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.3')]
-    [TestCase('Case1','1.2.3,1.2.2')]
+    [TestCase('Case2','1.2.3,1.2.2')]
     procedure NotLessThan(const a : string; const b : string);
 
     [TestCase('Case1','1.2.3,1.2.2')]
@@ -100,8 +105,8 @@ type
     [TestCase('Case15','1.0.0,0.9.9')]
     [TestCase('Case16','0.10.0,0.9.0')]
     [TestCase('Case17','0.99.0,0.10.0')]
-    [TestCase('Case17','2.0.0,1.2.3')]
-    [TestCase('Case18','1.2.3,1.2.3-asdf')]
+    [TestCase('Case18','2.0.0,1.2.3')]
+    [TestCase('Case19','1.2.3,1.2.3-asdf')]
     [TestCase('Case20','1.2.3,1.2.3-4')]
     [TestCase('Case21','1.2.3,1.2.3-4-foo')]
     [TestCase('Case22','1.2.3-5-foo,1.2.3-5')]

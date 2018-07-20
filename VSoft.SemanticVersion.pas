@@ -74,6 +74,7 @@ type
 implementation
 
 uses
+  System.StrUtils,
   System.SysUtils;
 
 { TSemanticVersion }
@@ -100,6 +101,48 @@ begin
     result := -1;
 end;
 
+//borrowed from stringhelper, works in more versions of delphi
+function SplitStr(const value : string; const Separator: Char): TArray<string>;
+const
+  DeltaGrow = 4; //we are not likely to need a lot
+var
+  NextSeparator, LastIndex: Integer;
+  Total: Integer;
+  CurrentLength: Integer;
+  s : string;
+begin
+  Total := 0;
+  LastIndex := 1;
+  CurrentLength := 0;
+  NextSeparator := PosEx(Separator,value, LastIndex);
+  while (NextSeparator > 0)  do
+  begin
+    s := Copy(value, LastIndex, NextSeparator - LastIndex);
+    if (S <> '') or (S = '') then
+    begin
+      Inc(Total);
+      if CurrentLength < Total then
+      begin
+        CurrentLength := Total + DeltaGrow;
+        SetLength(Result, CurrentLength);
+      end;
+      Result[Total - 1] := S;
+    end;
+    LastIndex := NextSeparator + 1;
+    NextSeparator :=  PosEx(Separator,value, LastIndex);
+  end;
+
+  if (LastIndex <= Length(value)) then
+  begin
+    Inc(Total);
+    SetLength(Result, Total);
+    Result[Total - 1] := Copy(value,LastIndex, Length(value) - LastIndex + 1);
+  end
+  else
+    SetLength(Result, Total);
+end;
+
+
 class function TSemanticVersion.CompareLabels(const a, b: string): integer;
 var
   i      : integer;
@@ -117,8 +160,8 @@ var
   bParts : TArray<string>;
 begin
   result := 0;
-  aParts := a.Split(['.']);
-  bParts := b.Split(['.']);
+  aParts := SplitStr(a,'.');
+  bParts := SplitStr(b,'.');
 
   aLen := Length(aParts);
   bLen := Length(bParts);
@@ -320,7 +363,7 @@ var
 
 begin
   result := TSemanticVersion.Empty;
-  sValue := version.Trim();
+  sValue := Trim(version);
   len := Length(sValue);
   currentElement := '';
   i := 1;
