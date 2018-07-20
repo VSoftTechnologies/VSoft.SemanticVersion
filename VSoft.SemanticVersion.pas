@@ -39,7 +39,7 @@ type
     function GetIsStable : boolean;
     function GetIsEmpty : boolean;
     class function IsDigit(const value : Char) : boolean;static;
-    class function CompareLabels(const a : TArray<string>; const b : TArray<string>) : integer;static;
+    class function CompareLabels(const a, b : string) : integer;static;
   public
     constructor Create(const major, minor : Word);overload;
     constructor Create(const major, minor : Word; const preReleaseLabel : string );overload;
@@ -100,7 +100,7 @@ begin
     result := -1;
 end;
 
-class function TSemanticVersion.CompareLabels(const a, b: TArray<string>): integer;
+class function TSemanticVersion.CompareLabels(const a, b: string): integer;
 var
   i      : integer;
   aLen   : integer;
@@ -113,17 +113,21 @@ var
   iB     : integer;
   aIsNumeric : boolean;
   bIsNumeric : boolean;
+  aParts : TArray<string>;
+  bParts : TArray<string>;
 begin
   result := 0;
-  aLen := Length(a);
-  bLen := Length(b);
-  maxLen := Max(aLen, bLen);
+  aParts := a.Split(['.']);
+  bParts := b.Split(['.']);
 
+  aLen := Length(aParts);
+  bLen := Length(bParts);
   //both should have at least 1 element, otherwise we should not have gotten here!
   Assert(aLen >= 1);
   Assert(bLen >= 1);
 
-  i := 0;
+  maxLen := Max(aLen, bLen);
+
   for i := 0 to maxLen -1 do
   begin
     sA := '';
@@ -134,13 +138,13 @@ begin
     bIsNumeric := false;
     if i < aLen then
     begin
-      sA := a[i];
+      sA := aParts[i];
       iA := StrToIntDef(sA, -1);
       aIsNumeric := iA <> -1;
     end;
     if i < bLen then
     begin
-      sB := b[i];
+      sB := bParts[i];
       iB := StrToIntDef(sB, -1);
       bIsNumeric := iB <> -1;
     end;
@@ -154,10 +158,9 @@ begin
     if sB = '' then
       exit(1);
 
-//both numeric, so use numeric
     if aIsNumeric and bIsNumeric then
     begin
-      result := CompareInt(iA,iB);
+      result := iA - iB;// CompareInt(iA,iB);
       if result <> 0 then
         exit
       else
@@ -183,8 +186,6 @@ end;
 function TSemanticVersion.CompareTo(const version: TSemanticVersion): integer;
 var
   i: Integer;
-  selfLabelParts : TArray<string>;
-  verLabelParts : TArray<string>;
 begin
   for i := 0 to 2 do
   begin
@@ -194,20 +195,14 @@ begin
   end;
 
   //if we get here, version fields are equal.. so compare the labels
-  // label < no label?? Is this right?
-  if Self.PreReleaseLabel <> version.PreReleaseLabel then
+  // label < no label
+  if CompareStr(Self.PreReleaseLabel,version.PreReleaseLabel) <> 0 then
   begin
     if Self.PreReleaseLabel = '' then
-      Exit(1)
+      Exit(1) //self greater than version
     else if version.PreReleaseLabel = '' then
-      Exit(-1);
-
-
-    selfLabelParts := Self.PreReleaseLabel.Split(['.']);
-    verLabelParts  := version.PreReleaseLabel.Split(['.']);
-
-    Result := TSemanticVersion.CompareLabels(selfLabelParts, verLabelParts);
-//    Result := CompareStr(Self.PreReleaseLabel, version.PreReleaseLabel);
+      Exit(-1); //self less than version
+    Result := TSemanticVersion.CompareLabels(self.PreReleaseLabel, version.PreReleaseLabel);
   end
   else
     result := 0;
@@ -315,8 +310,11 @@ var
       else
         break;
     end;
-    result.FLabel := Copy(sValue,labelStart,i);
-    Inc(i);
+    result.FLabel := Copy(sValue,labelStart,i - labelStart);
+    if sValue[i] = '+' then
+    begin
+      ParseMetaData;
+    end;
   end;
 
 

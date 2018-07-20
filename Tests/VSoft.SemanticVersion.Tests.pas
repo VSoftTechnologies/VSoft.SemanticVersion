@@ -25,7 +25,11 @@ type
 
     procedure Can_Parse_String_with_three_components;
 
-    procedure Can_Parse_String_with_four_components;
+    procedure Can_Parse_String_with_label;
+
+    procedure Can_Parse_String_with_label_and_metadata;
+
+    procedure Can_Parse_String_with_metadata;
 
     procedure Can_Not_Parse_String_with_one_component;
 
@@ -161,6 +165,7 @@ begin
   Assert.AreEqual(version.Minor,2);
   Assert.AreEqual(version.Patch,3);
   Assert.AreEqual(version.PreReleaseLabel,'Beta');
+  Assert.AreEqual(version.MetaData,'1.2.3.4');
   Assert.AreEqual<string>(version.ToString,'1.2.3-Beta+1.2.3.4');
 end;
 
@@ -209,7 +214,7 @@ begin
 
 end;
 
-procedure TSemanticVersionTest.Can_Parse_String_with_four_components;
+procedure TSemanticVersionTest.Can_Parse_String_with_label;
 var
   version : TSemanticVersion;
 begin
@@ -219,6 +224,33 @@ begin
   Assert.AreEqual(2,version.Minor);
   Assert.AreEqual(3,version.Patch);
   Assert.AreEqual('Beta',version.PreReleaseLabel);
+end;
+
+procedure TSemanticVersionTest.Can_Parse_String_with_label_and_metadata;
+var
+  version : TSemanticVersion;
+begin
+  Assert.IsTrue(TSemanticVersion.TryParse('1.2.3-Beta+meta',version));
+
+  Assert.AreEqual(1,version.Major);
+  Assert.AreEqual(2,version.Minor);
+  Assert.AreEqual(3,version.Patch);
+  Assert.AreEqual('Beta',version.PreReleaseLabel);
+  Assert.AreEqual('meta',version.MetaData);
+
+end;
+
+procedure TSemanticVersionTest.Can_Parse_String_with_metadata;
+var
+  version : TSemanticVersion;
+begin
+  Assert.IsTrue(TSemanticVersion.TryParse('1.2.3+meta',version));
+
+  Assert.AreEqual(1,version.Major);
+  Assert.AreEqual(2,version.Minor);
+  Assert.AreEqual(3,version.Patch);
+  Assert.AreEqual('',version.PreReleaseLabel);
+  Assert.AreEqual('meta',version.MetaData);
 end;
 
 procedure TSemanticVersionTest.Can_Parse_String_with_three_components;
