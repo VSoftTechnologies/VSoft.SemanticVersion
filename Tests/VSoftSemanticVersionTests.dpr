@@ -35,10 +35,14 @@ begin
     //Log to the console window
     logger := TDUnitXConsoleLogger.Create(true);
     runner.AddLogger(logger);
+    {$IFDEF CI}
     //Generate an NUnit compatible XML File
     nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
     runner.AddLogger(nunitLogger);
+    {$ENDIF}
+
     runner.FailsOnNoAsserts := False; //When true, Assertions must be made during tests;
+
 
     //Run tests
     results := runner.Execute;
