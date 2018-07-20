@@ -28,20 +28,23 @@ unit VSoft.SemanticVersion;
 
 interface
 
+
 type
   TSemanticVersion = record
   private
     FLabel    : string;
+    FMetaData : string;
     Elements : array[0..2] of word; //version numbers are typically 16 bit unsigned integers
     constructor CreateEmpty(const dummy : integer);
     function GetIsStable : boolean;
     function GetIsEmpty : boolean;
     class function IsDigit(const value : Char) : boolean;static;
+    class function CompareLabels(const a : TArray<string>; const b : TArray<string>) : integer;static;
   public
     constructor Create(const major, minor : Word);overload;
     constructor Create(const major, minor : Word; const preReleaseLabel : string );overload;
     constructor Create(const major, minor, release : Word);overload;
-    constructor Create(const major, minor, release : Word; const preReleaseLabel : string );overload;
+    constructor Create(const major, minor, release : Word; const preReleaseLabel : string; const metaData : string );overload;
 
     function Clone : TSemanticVersion;
     function CompareTo(const version : TSemanticVersion) : integer;
@@ -49,6 +52,7 @@ type
 
     class function Parse(const version : string) : TSemanticVersion;static;
     class function TryParse(const version : string; out value : TSemanticVersion) : boolean;static;
+    class function TryParseWithError(const version : string; out value : TSemanticVersion; out error : string) : boolean;static;
     class function Empty : TSemanticVersion; static;
 
     class operator Equal(a: TSemanticVersion; b: TSemanticVersion) : boolean;
@@ -64,6 +68,7 @@ type
     property PreReleaseLabel : string read FLabel write FLabel;
     property IsStable : boolean read GetIsStable;
     property IsEmpty  : boolean read GetIsEmpty;
+    property MetaData : string read FMetaData;
   end;
 
 implementation
@@ -75,12 +80,111 @@ uses
 
 function TSemanticVersion.Clone: TSemanticVersion;
 begin
-  result := TSemanticVersion.Create(Major, Minor, Patch, PreReleaseLabel);
+  result := TSemanticVersion.Create(Major, Minor, Patch, PreReleaseLabel, MetaData);
+end;
+
+function Max(const a, b : integer) : integer;
+begin
+  if a > b then
+    result := a
+  else
+    result := b;
+end;
+
+function CompareInt(const a, b : integer) : integer;
+begin
+  result := 0;
+  if a > b  then
+    result := 1
+  else if a < b then
+    result := -1;
+end;
+
+class function TSemanticVersion.CompareLabels(const a, b: TArray<string>): integer;
+var
+  i      : integer;
+  aLen   : integer;
+  bLen   : integer;
+  maxLen : integer;
+
+  sA     : string;
+  sB     : string;
+  iA     : integer;
+  iB     : integer;
+  aIsNumeric : boolean;
+  bIsNumeric : boolean;
+begin
+  result := 0;
+  aLen := Length(a);
+  bLen := Length(b);
+  maxLen := Max(aLen, bLen);
+
+  //both should have at least 1 element, otherwise we should not have gotten here!
+  Assert(aLen >= 1);
+  Assert(bLen >= 1);
+
+  i := 0;
+  for i := 0 to maxLen -1 do
+  begin
+    sA := '';
+    sB := '';
+    iA := -1;
+    iB := -1;
+    aIsNumeric := false;
+    bIsNumeric := false;
+    if i < aLen then
+    begin
+      sA := a[i];
+      iA := StrToIntDef(sA, -1);
+      aIsNumeric := iA <> -1;
+    end;
+    if i < bLen then
+    begin
+      sB := b[i];
+      iB := StrToIntDef(sB, -1);
+      bIsNumeric := iB <> -1;
+    end;
+
+    //if the string values are exactly the continue
+    if CompareStr(sA, sB) = 0 then
+      continue;
+
+    if sA = '' then
+      exit(-1);
+    if sB = '' then
+      exit(1);
+
+//both numeric, so use numeric
+    if aIsNumeric and bIsNumeric then
+    begin
+      result := CompareInt(iA,iB);
+      if result <> 0 then
+        exit
+      else
+        continue;
+    end
+    else if (not aIsNumeric) and (not bIsNumeric) then
+    begin
+      result := CompareStr(sA,sB);
+      if result <> 0 then
+        exit
+      else
+        continue;
+    end
+    else if aIsNumeric and (not bIsNumeric) then
+    begin
+      exit(-1);
+    end
+    else
+      exit(1);
+  end;
 end;
 
 function TSemanticVersion.CompareTo(const version: TSemanticVersion): integer;
 var
   i: Integer;
+  selfLabelParts : TArray<string>;
+  verLabelParts : TArray<string>;
 begin
   for i := 0 to 2 do
   begin
@@ -90,25 +194,33 @@ begin
   end;
 
   //if we get here, version fields are equal.. so compare the labels
-  // label > no label?? Is this right?
+  // label < no label?? Is this right?
   if Self.PreReleaseLabel <> version.PreReleaseLabel then
   begin
     if Self.PreReleaseLabel = '' then
       Exit(1)
     else if version.PreReleaseLabel = '' then
       Exit(-1);
-    Result := CompareText(Self.PreReleaseLabel, version.PreReleaseLabel);
-  end;
+
+
+    selfLabelParts := Self.PreReleaseLabel.Split(['.']);
+    verLabelParts  := version.PreReleaseLabel.Split(['.']);
+
+    Result := TSemanticVersion.CompareLabels(selfLabelParts, verLabelParts);
+//    Result := CompareStr(Self.PreReleaseLabel, version.PreReleaseLabel);
+  end
+  else
+    result := 0;
 end;
 
 constructor TSemanticVersion.Create(const major, minor: Word);
 begin
-  Create(major,minor,0,'');
+  Create(major,minor,0,'','');
 end;
 
 constructor TSemanticVersion.Create(const major, minor, release: Word);
 begin
-  Create(major, minor, release, PreReleaseLabel);
+  Create(major, minor, release, '','');
 end;
 
 constructor TSemanticVersion.CreateEmpty(const dummy: integer);
@@ -117,6 +229,7 @@ begin
   Elements[1] := 0;
   Elements[2] := 0;
   FLabel := '';
+  FMetaData := '';
 end;
 
 class function TSemanticVersion.Empty: TSemanticVersion;
@@ -181,6 +294,32 @@ var
   currentElement : string;
   sValue : string;
   count : integer;
+  labelStart : integer;
+
+  procedure ParseMetaData;
+  begin
+    Inc(i);
+    if i <= len then
+      result.FMetaData := Copy(sValue,i,len);
+    i := len + 1;
+  end;
+
+  procedure ParseLabel;
+  begin
+    Inc(i);
+    labelStart := i;
+    while i <= len do
+    begin
+      if sValue[i] <> '+' then
+        Inc(i)
+      else
+        break;
+    end;
+    result.FLabel := Copy(sValue,labelStart,i);
+    Inc(i);
+  end;
+
+
 begin
   result := TSemanticVersion.Empty;
   sValue := version.Trim();
@@ -208,22 +347,25 @@ begin
       Result.Elements[e] := StrToInt(currentElement);
       Inc(count);
     end;
-    if (i <= len) and (sValue[i] = '.') then
+    //don't skip the . if we are parsing the last valid element
+    if (e < 2) and (i <= len) and (sValue[i] = '.') then
       Inc(i);
   end;
-  if sValue[i] = '-' then
+  if i < len then
   begin
-    Inc(i);
-    if i <= len then
-      result.FLabel := Copy(sValue,i,len);
-  end
-  else
-  begin
-    if i <= len then
-      raise EArgumentException.Create('Not a valid version string - Too many parts, max of 3 integer parts, e.g: 1.2.3 and optional label, e.g: 1.2.3-Beta1');
-
+    case sValue[i] of
+      '-' : //a label follows
+      begin
+        ParseLabel;
+      end;
+      '+' : //everything that follows is metadata
+      begin
+        ParseMetaData;
+      end;
+    else
+      raise EArgumentException.Create('Not a valid version string, invalid char at position : [' + IntToStr(i) + '] ''' + sValue[i] + '''');
+    end;
   end;
-
 
   if count < 2 then
     raise EArgumentException.Create('Not a valid version string - needs at least two parts, e.g: 1.0');
@@ -240,6 +382,22 @@ begin
     result := Format('%d.%d.%d',[Major, Minor, Patch])
   else
     result := Format('%d.%d.%d-%s',[Major, Minor, Patch,FLabel]);
+  if FMetaData <> '' then
+    result := result + '+' + FMetaData;
+end;
+
+class function TSemanticVersion.TryParseWithError(const version: string; out value: TSemanticVersion; out error: string): boolean;
+begin
+  result := true;
+  try
+    value := Parse(version);
+  except
+    on e : Exception do
+    begin
+      result := False;
+      error := e.Message;
+    end;
+  end;
 end;
 
 class function TSemanticVersion.TryParse(const version: string; out value: TSemanticVersion): boolean;
@@ -254,16 +412,17 @@ end;
 
 constructor TSemanticVersion.Create(const major, minor: Word; const preReleaseLabel: string);
 begin
-  Create(major,minor,0,preReleaseLabel);
+  Create(major,minor,0,preReleaseLabel,'');
 end;
 
-constructor TSemanticVersion.Create(const major, minor, release: Word; const preReleaseLabel: string);
+constructor TSemanticVersion.Create(const major, minor, release: Word; const preReleaseLabel, metaData: string);
 begin
   Elements[0] := major;
   Elements[1] := minor;
   Elements[2] := release;
   FLabel      := preReleaseLabel;
-
+  FMetaData   := metaData;
 end;
+
 
 end.
