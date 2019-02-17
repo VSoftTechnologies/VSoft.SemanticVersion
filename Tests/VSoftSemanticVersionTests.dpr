@@ -18,7 +18,9 @@ var
   runner : ITestRunner;
   results : IRunResults;
   logger : ITestLogger;
+{$IFDEF CI}
   nunitLogger : ITestLogger;
+{$ENDIF}
 begin
 {$IFDEF TESTINSIGHT}
   TestInsight.DUnitX.RunRegisteredTests;
