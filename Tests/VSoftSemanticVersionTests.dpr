@@ -11,9 +11,9 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
-  VSoft.SemanticVersion in '..\VSoft.SemanticVersion.pas',
-  VSoft.SemanticVersion.Tests in 'VSoft.SemanticVersion.Tests.pas';
-  
+  VSoft.SemanticVersion.Tests in 'VSoft.SemanticVersion.Tests.pas',
+  VSoft.SemanticVersion in '..\Source\VSoft.SemanticVersion.pas';
+
 var
   runner : ITestRunner;
   results : IRunResults;
