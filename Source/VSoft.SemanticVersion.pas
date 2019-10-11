@@ -43,12 +43,13 @@ type
   public
     constructor Create(const major, minor : Word);overload;
     constructor Create(const major, minor : Word; const preReleaseLabel : string );overload;
-    constructor Create(const major, minor, release : Word);overload;
-    constructor Create(const major, minor, release : Word; const preReleaseLabel : string; const metaData : string );overload;
+    constructor Create(const major, minor, patch : Word);overload;
+    constructor Create(const major, minor, patch : Word; const preReleaseLabel : string; const metaData : string );overload;
 
     function Clone : TSemanticVersion;
     function CompareTo(const version : TSemanticVersion) : integer;
     function ToString : string;
+    function ToStringNoMeta : string;
 
     class function Parse(const version : string) : TSemanticVersion;static;
     class function TryParse(const version : string; out value : TSemanticVersion) : boolean;static;
@@ -256,9 +257,9 @@ begin
   Create(major,minor,0,'','');
 end;
 
-constructor TSemanticVersion.Create(const major, minor, release: Word);
+constructor TSemanticVersion.Create(const major, minor, patch: Word);
 begin
-  Create(major, minor, release, '','');
+  Create(major, minor, patch, '','');
 end;
 
 constructor TSemanticVersion.CreateEmpty(const dummy: integer);
@@ -427,6 +428,17 @@ begin
     result := result + '+' + FMetaData;
 end;
 
+function TSemanticVersion.ToStringNoMeta: string;
+begin
+  if IsEmpty then
+    Exit('');
+
+  if FLabel = '' then
+    result := Format('%d.%d.%d',[Major, Minor, Patch])
+  else
+    result := Format('%d.%d.%d-%s',[Major, Minor, Patch,FLabel]);
+end;
+
 class function TSemanticVersion.TryParseWithError(const version: string; out value: TSemanticVersion; out error: string): boolean;
 begin
   result := true;
@@ -456,11 +468,11 @@ begin
   Create(major,minor,0,preReleaseLabel,'');
 end;
 
-constructor TSemanticVersion.Create(const major, minor, release: Word; const preReleaseLabel, metaData: string);
+constructor TSemanticVersion.Create(const major, minor, patch: Word; const preReleaseLabel, metaData: string);
 begin
   Elements[0] := major;
   Elements[1] := minor;
-  Elements[2] := release;
+  Elements[2] := patch;
   FLabel      := preReleaseLabel;
   FMetaData   := metaData;
 end;
