@@ -119,6 +119,7 @@ type
     [TestCase('Case29','1.2.3-a.b.c.10.d.5,1.2.3-a.b.c.5.d.100')]
     [TestCase('Case30','1.2.3-r2,1.2.3-r100')]
     [TestCase('Case31','1.2.3-r100,1.2.3-R2')]
+    [TestCase('Case31','1.2.3,1.2.3-r100')]
     procedure Comparisons(const a : string; const b : string);
 
   end;

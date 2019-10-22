@@ -63,13 +63,13 @@ type
     class operator LessThan(a : TSemanticVersion; b : TSemanticVersion) : boolean;
     class operator LessThanOrEqual(a : TSemanticVersion; b : TSemanticVersion) : boolean;
 
-    property Major    : Word read Elements[0];
-    property Minor    : Word read Elements[1];
-    property Patch  : Word read Elements[2];
+    property Major    : Word read Elements[0] write Elements[0];
+    property Minor    : Word read Elements[1] write Elements[1];
+    property Patch  : Word read Elements[2] write Elements[2];
     property PreReleaseLabel : string read FLabel write FLabel;
     property IsStable : boolean read GetIsStable;
     property IsEmpty  : boolean read GetIsEmpty;
-    property MetaData : string read FMetaData;
+    property MetaData : string read FMetaData write FMetaData;
   end;
 
 implementation
