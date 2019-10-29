@@ -380,6 +380,7 @@ begin
   Assert.IsFalse(TSemanticVersion.TryParse('sdfsdf', v1));
   Assert.IsFalse(TSemanticVersion.TryParse('1.2.3.4.5', v1));
   Assert.IsFalse(TSemanticVersion.TryParse('alphabeta.2.3', v1));
+  Assert.IsFalse(TSemanticVersion.TryParse('1.2.A', v1));
 
 end;
 

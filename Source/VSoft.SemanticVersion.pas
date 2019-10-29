@@ -361,6 +361,19 @@ var
     end;
   end;
 
+  function IsDecimalInteger(const value : string): Boolean;
+  var
+    i : integer;
+  begin
+    result := true;
+    for i := 1 to Length(value) do
+      if not TSemanticVersion.IsDigit(value[i]) then
+      begin
+        Result := False;
+        exit;
+      end;
+  end;
+
 
 begin
   result := TSemanticVersion.Empty;
@@ -382,10 +395,17 @@ begin
         Inc(i);
       end
       else
+      begin
+        if not CharInSet(sValue[i], ['.', '-', '+']) then
+          currentElement := currentElement + sValue[i];
         break;
+      end;
+
     end;
     if currentElement <> '' then
     begin
+      if not IsDecimalInteger(currentElement) then
+        raise EArgumentException.Create('Not a valid version string - [' + currentElement + '] is not an integer');
       Result.Elements[e] := StrToInt(currentElement);
       Inc(count);
     end;
