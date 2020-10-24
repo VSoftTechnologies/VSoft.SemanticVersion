@@ -1,7 +1,7 @@
 {
   "metadata": {
     "id": "VSoft.SemanticVersion",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "SemanticVersion Parser",
     "authors": "Vincent Parrett",
     "projectUrl": "https://github.com/VSoftTechnologies/VSoft.SemanticVersion",
@@ -62,6 +62,11 @@
     },
     {
       "compiler": "10.3",
+      "platforms": "Win32, Win64",
+      "template": "default"
+    },
+    {
+      "compiler": "10.4",
       "platforms": "Win32, Win64",
       "template": "default"
     }
