@@ -52,6 +52,8 @@ type
     [TestCase('Case1','1.2.3,1.2.2')]
     [TestCase('Case2','1.2.3,1.1.3')]
     [TestCase('Case3','1.2.3,0.2.3')]
+    [TestCase('Case4','1.2.3-alpha2,1.2.3-alpha1')]
+    [TestCase('Case5','1.2.3-beta1,1.2.3-alpha1')]
     procedure GreaterThan(const a : string; const b : string);
 
 
