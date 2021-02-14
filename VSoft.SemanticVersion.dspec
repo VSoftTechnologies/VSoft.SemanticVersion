@@ -1,7 +1,7 @@
 {
   "metadata": {
     "id": "VSoft.SemanticVersion",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "SemanticVersion Parser",
     "authors": "Vincent Parrett",
     "projectUrl": "https://github.com/VSoftTechnologies/VSoft.SemanticVersion",
@@ -77,12 +77,26 @@
       "source": [
         {
           "src": "source\\***.pas",
-          "dest": "src"
+          "dest": "source"
+        },
+        {
+          "src": "packages\\Rad Studio $compilerWithCodeName$\\*.dpk",
+          "dest": "packages\\Rad Studio $compilerWithCodeName$"
+        },
+        {
+          "src": "packages\\Rad Studio $compilerWithCodeName$\\*.dproj",
+          "dest": "packages\\Rad Studio $compilerWithCodeName$"
         }
       ],
       "searchPaths": [
         {
-          "path": "src"
+          "path": "source"
+        }
+      ],
+      "build": [
+        {
+          "id": "Runtime",
+          "project": ".\\packages\\Rad Studio $compilerWithCodeName$\\VSoft.SemanticVersionR.dproj"
         }
       ]
     }
