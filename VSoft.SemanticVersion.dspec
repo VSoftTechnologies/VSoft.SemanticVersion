@@ -1,10 +1,11 @@
 {
   "metadata": {
     "id": "VSoft.SemanticVersion",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "SemanticVersion Parser",
     "authors": "Vincent Parrett",
     "projectUrl": "https://github.com/VSoftTechnologies/VSoft.SemanticVersion",
+    "repositoryUrl": "https://github.com/VSoftTechnologies/VSoft.SemanticVersion",
     "license": "Apache-2.0",
     "copyright": "Vincent Parrett and contributors",
     "tags": "SemanticVersion Semver parser"
