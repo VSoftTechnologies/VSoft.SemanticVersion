@@ -14,7 +14,7 @@ metadata:
   copyright: Vincent Parrett and contributors
   tags: [ SemanticVersion, Semver, parser ]
   version: 0.2.7
-  repositoryCommit: Id:bafa016869e602d022197ef10e341e929ad910de
+  repositoryCommit: #HASH#
 
 # define variable defaults - can be overriden in targetPlatforms
 variables:
