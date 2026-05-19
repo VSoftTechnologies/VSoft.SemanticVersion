@@ -13,7 +13,7 @@ metadata:
   readme: README.md
   copyright: Vincent Parrett and contributors
   tags: [ SemanticVersion, Semver, parser ]
-  version: 0.2.7
+  version: 0.2.8
   repositoryCommit: #HASH#
 
 # define variable defaults - can be overriden in targetPlatforms
@@ -50,4 +50,4 @@ templates:
       - src: ./packages/$packageSource$/*.dproj
         dest: ./packages/$packageSource$
     build:
-      - project: ./packages/$packageSource$/VSoft.JsonDataObjectsR.dproj
+      - project: ./packages/$packageSource$/VSoft.SemanticVersionR.dproj
