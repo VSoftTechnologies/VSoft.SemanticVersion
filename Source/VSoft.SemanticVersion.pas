@@ -30,6 +30,14 @@ interface
 
 
 type
+  TFileVersion = record
+    Major : Word;
+    Minor : Word;
+    Release : Word;
+    Build  : Word;
+    function ToString : string;
+  end;
+
   TSemanticVersion = record
   private
     FPreReleaseTag    : string;
@@ -50,6 +58,22 @@ type
     function CompareTo(const version : TSemanticVersion) : integer;
     function ToString : string;
     function ToStringNoMeta : string;
+
+
+    // Semver doesn't map well to windows fileversion, so this is a hack.
+    //
+    // so we use ranges -
+    //  0-1999 is for anything other than beta or release (eg. alpha)
+    //  2000-4999 is for beta
+    //  5000 is a release build.
+    // for non release builds, if the pre-release tag has any numeric segments, the first will be used
+    // note that in semver - 0.1.2 > 0.1.2-alpha.1000
+    // 0.1.2-alpha.2 = 0.1.2.2
+    // 0.1.2-beta.5 = 0.1.2.2005
+    // 0.1.2 = 0.1.2.5000.
+
+    function ToFileVersion : TFileVersion;
+    function ToFileVersionString : string;
 
     class function Parse(const version : string) : TSemanticVersion;static;
     class function TryParse(const version : string; out value : TSemanticVersion) : boolean;static;
@@ -435,6 +459,45 @@ begin
 
 end;
 
+function TSemanticVersion.ToFileVersion: TFileVersion;
+var
+  build : integer;
+  preReleaseBase : integer;
+  elements : TArray<string>;
+  element : string;
+  i : integer;
+begin
+  build := 5000; //release base
+  preReleaseBase := 0;
+  if not Self.IsStable then //has a prerelease tag
+  begin
+    if Pos('beta', FPreReleaseTag) > 0 then
+      preReleaseBase := 2000;
+    elements := SplitStr(FPreReleaseTag, '.');
+    for element in elements do
+    begin
+       i := StrToIntDef(element, -1);
+       if i <> -1 then
+       begin
+         build := preReleaseBase + i;
+         break;
+       end;
+    end;
+  end;
+  result.Major := Major;
+  result.Minor := Minor;
+  result.Release := Patch;
+  result.Build := build;
+end;
+
+function TSemanticVersion.ToFileVersionString: string;
+var
+  fileVersion : TFileVersion;
+begin
+  fileVersion := ToFileVersion;
+  result := fileVersion.ToString;
+end;
+
 function TSemanticVersion.ToString: string;
 begin
   if IsEmpty then
@@ -497,5 +560,12 @@ begin
   FMetaData   := metaData;
 end;
 
+
+{ TFileVersion }
+
+function TFileVersion.ToString: string;
+begin
+  result := Format('%d.%d.%d.%d', [Major, Minor, Release, Build]);
+end;
 
 end.

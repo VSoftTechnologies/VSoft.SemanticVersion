@@ -41,6 +41,8 @@ begin
     //Generate an NUnit compatible XML File
     nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
     runner.AddLogger(nunitLogger);
+    {$ELSE}
+    TDUnitX.Options.ExitBehavior := TDUnitXExitBehavior.Pause;
     {$ENDIF}
 
     runner.FailsOnNoAsserts := False; //When true, Assertions must be made during tests;

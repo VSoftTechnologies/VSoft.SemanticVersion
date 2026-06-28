@@ -124,6 +124,25 @@ type
     [TestCase('Case31','1.2.3,1.2.3-r100')]
     procedure Comparisons(const a : string; const b : string);
 
+    // ToFileVersion - see the comment above TSemanticVersion.ToFileVersion
+    //  0-1999    : anything other than beta or release (eg. alpha)
+    //  2000-4999 : beta
+    //  5000      : release
+    // the first numeric (dot separated) segment of the pre-release tag is added to the base.
+    [TestCase('Release',          '1.2.3,1,2,3,5000')]
+    [TestCase('ReleaseTwoParts',  '1.2,1,2,0,5000')]
+    [TestCase('AlphaWithNumber',  '0.1.2-alpha.2,0,1,2,2')]
+    [TestCase('BetaWithNumber',   '0.1.2-beta.5,0,1,2,2005')]
+    // no numeric segment - falls back to the release base (5000)
+    [TestCase('AlphaNoNumber',    '1.2.3-alpha,1,2,3,5000')]
+    [TestCase('BetaNoNumber',     '1.2.3-beta,1,2,3,5000')]
+    procedure ToFileVersion_maps_correctly(const version : string; const major, minor, release, build : Word);
+
+    [TestCase('Release',          '1.2.3,1.2.3.5000')]
+    [TestCase('AlphaWithNumber',  '0.1.2-alpha.2,0.1.2.2')]
+    [TestCase('BetaWithNumber',   '0.1.2-beta.5,0.1.2.2005')]
+    procedure ToFileVersionString_maps_correctly(const version : string; const expected : string);
+
   end;
 
 implementation
@@ -296,6 +315,27 @@ begin
   Assert.AreEqual(v2, v2);
   Assert.AreNotEqual(v1, v2);
 
+end;
+
+procedure TSemanticVersionTest.ToFileVersion_maps_correctly(const version : string; const major, minor, release, build : Word);
+var
+  v : TSemanticVersion;
+  fileVersion : TFileVersion;
+begin
+  Assert.IsTrue(TSemanticVersion.TryParse(version, v));
+  fileVersion := v.ToFileVersion;
+  Assert.AreEqual<Word>(major, fileVersion.Major);
+  Assert.AreEqual<Word>(minor, fileVersion.Minor);
+  Assert.AreEqual<Word>(release, fileVersion.Release);
+  Assert.AreEqual<Word>(build, fileVersion.Build);
+end;
+
+procedure TSemanticVersionTest.ToFileVersionString_maps_correctly(const version : string; const expected : string);
+var
+  v : TSemanticVersion;
+begin
+  Assert.IsTrue(TSemanticVersion.TryParse(version, v));
+  Assert.AreEqual<string>(expected, v.ToFileVersionString);
 end;
 
 procedure TSemanticVersionTest.GreaterThan(const a : string; const b : string);
