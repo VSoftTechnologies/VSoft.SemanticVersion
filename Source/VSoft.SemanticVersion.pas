@@ -66,11 +66,13 @@ type
     //  0-1999 is for anything other than beta or release (eg. alpha)
     //  2000-4999 is for beta
     //  5000 is a release build.
-    // for non release builds, if the pre-release tag has any numeric segments, the first will be used
+    // for non release builds, if the pre-release tag has any numeric (all digit) segments, the first will be used
     // note that in semver - 0.1.2 > 0.1.2-alpha.1000
     // 0.1.2-alpha.2 = 0.1.2.2
     // 0.1.2-beta.5 = 0.1.2.2005
     // 0.1.2 = 0.1.2.5000.
+    // raises EArgumentOutOfRangeException if Major, Minor or Patch is larger than 65535, or if the
+    // pre-release number does not fit in its range (larger than 1999, or 2999 for beta).
 
     function ToFileVersion : TFileVersion;
     function ToFileVersionString : string;
@@ -126,6 +128,16 @@ begin
     result := -1;
 end;
 
+//do not subtract - a Cardinal subtraction wraps (or raises with $Q+/$R+) when the values are 2^31 or more apart.
+function CompareCardinal(const a, b : Cardinal) : integer;
+begin
+  result := 0;
+  if a > b  then
+    result := 1
+  else if a < b then
+    result := -1;
+end;
+
 //borrowed from stringhelper, works in more versions of delphi
 function SplitStr(const value : string; const Separator: Char): TArray<string>;
 const
@@ -167,6 +179,44 @@ begin
     SetLength(Result, Total);
 end;
 
+//a numeric identifier is all digits - StrToInt would also accept signs and hex prefixes ($, 0x).
+function IsNumericIdentifier(const value : string) : boolean;
+var
+  i : integer;
+begin
+  result := value <> '';
+  for i := 1 to Length(value) do
+  begin
+    if not TSemanticVersion.IsDigit(value[i]) then
+      exit(false);
+  end;
+end;
+
+function TrimLeadingZeros(const value : string) : string;
+var
+  i : integer;
+begin
+  i := 1;
+  //leave at least one digit
+  while (i < Length(value)) and (value[i] = '0') do
+    Inc(i);
+  result := Copy(value, i, Length(value));
+end;
+
+//compares numeric identifiers of any length, without converting them to integers which may overflow.
+function CompareNumericIdentifiers(const a, b : string) : integer;
+var
+  sA : string;
+  sB : string;
+begin
+  sA := TrimLeadingZeros(a);
+  sB := TrimLeadingZeros(b);
+  //without leading zeros, the longer one is the larger number
+  result := CompareInt(Length(sA), Length(sB));
+  if result = 0 then
+    result := CompareStr(sA, sB);
+end;
+
 
 class function TSemanticVersion.CompareTags(const a, b: string): integer;
 var
@@ -177,8 +227,6 @@ var
 
   sA     : string;
   sB     : string;
-  iA     : integer;
-  iB     : integer;
   aIsNumeric : boolean;
   bIsNumeric : boolean;
   aParts : TArray<string>;
@@ -200,21 +248,17 @@ begin
   begin
     sA := '';
     sB := '';
-    iA := -1;
-    iB := -1;
     aIsNumeric := false;
     bIsNumeric := false;
     if i < aLen then
     begin
       sA := aParts[i];
-      iA := StrToIntDef(sA, -1);
-      aIsNumeric := iA <> -1;
+      aIsNumeric := IsNumericIdentifier(sA);
     end;
     if i < bLen then
     begin
       sB := bParts[i];
-      iB := StrToIntDef(sB, -1);
-      bIsNumeric := iB <> -1;
+      bIsNumeric := IsNumericIdentifier(sB);
     end;
 
     //if the string values are exactly the continue
@@ -228,7 +272,7 @@ begin
 
     if aIsNumeric and bIsNumeric then
     begin
-      result := iA - iB;// CompareInt(iA,iB);
+      result := CompareNumericIdentifiers(sA, sB);
       if result <> 0 then
         exit
       else
@@ -257,7 +301,7 @@ var
 begin
   for i := 0 to 2 do
   begin
-    result := FElements[i] - version.FElements[i];
+    result := CompareCardinal(FElements[i], version.FElements[i]);
     if result <> 0 then
       exit;
   end;
@@ -362,8 +406,9 @@ var
   procedure ParseMetaData;
   begin
     Inc(i);
-    if i <= len then
-      result.FMetaData := Copy(sValue,i,len);
+    if i > len then
+      raise EArgumentException.Create('Not a valid version string - the metadata after ''+'' is empty');
+    result.FMetaData := Copy(sValue,i,len);
     i := len + 1;
   end;
 
@@ -379,7 +424,10 @@ var
         break;
     end;
     result.FPreReleaseTag := Copy(sValue,TagStart,i - TagStart);
-    if sValue[i] = '+' then
+    if result.FPreReleaseTag = '' then
+      raise EArgumentException.Create('Not a valid version string - the pre-release tag after ''-'' is empty');
+    //the tag may run to the end of the string, in which case i = len + 1
+    if (i <= len) and (sValue[i] = '+') then
     begin
       ParseMetaData;
     end;
@@ -396,6 +444,23 @@ var
         Result := False;
         exit;
       end;
+  end;
+
+  //StrToInt would reject values above MaxInt, and StrToUInt is not available in older versions of delphi.
+  //value must only contain digits.
+  function ElementToCardinal(const value : string) : Cardinal;
+  var
+    j : integer;
+    digit : Cardinal;
+  begin
+    result := 0;
+    for j := 1 to Length(value) do
+    begin
+      digit := Ord(value[j]) - Ord('0');
+      if result > (High(Cardinal) - digit) div 10 then
+        raise EArgumentException.Create('Not a valid version string - [' + value + '] is too large, the maximum is ' + IntToStr(High(Cardinal)));
+      result := result * 10 + digit;
+    end;
   end;
 
 
@@ -430,14 +495,15 @@ begin
     begin
       if not IsDecimalInteger(currentElement) then
         raise EArgumentException.Create('Not a valid version string - [' + currentElement + '] is not an integer');
-      Result.FElements[e] := StrToInt(currentElement);
+      Result.FElements[e] := ElementToCardinal(currentElement);
       Inc(count);
     end;
     //don't skip the . if we are parsing the last valid element
     if (e < 2) and (i <= len) and (sValue[i] = '.') then
       Inc(i);
   end;
-  if i < len then
+  //check the last char too, a trailing separator is not valid
+  if i <= len then
   begin
     case sValue[i] of
       '-' : //a Tag follows
@@ -463,25 +529,45 @@ function TSemanticVersion.ToFileVersion: TFileVersion;
 var
   build : integer;
   preReleaseBase : integer;
+  preReleaseMax : integer;
   elements : TArray<string>;
   element : string;
-  i : integer;
+  number : string;
+
+  //the file version elements are Words, raise rather than truncate.
+  procedure CheckElement(const name : string; const value : Cardinal);
+  begin
+    if value > High(Word) then
+      raise EArgumentOutOfRangeException.Create(Format('Cannot convert to a file version - %s [%u] is larger than %u', [name, value, High(Word)]));
+  end;
+
 begin
+  CheckElement('Major', Major);
+  CheckElement('Minor', Minor);
+  CheckElement('Patch', Patch);
   build := 5000; //release base
   preReleaseBase := 0;
+  preReleaseMax := 1999;
   if not Self.IsStable then //has a prerelease tag
   begin
     if Pos('beta', FPreReleaseTag) > 0 then
+    begin
       preReleaseBase := 2000;
+      preReleaseMax := 4999;
+    end;
     elements := SplitStr(FPreReleaseTag, '.');
     for element in elements do
     begin
-       i := StrToIntDef(element, -1);
-       if i <> -1 then
-       begin
-         build := preReleaseBase + i;
-         break;
-       end;
+      if IsNumericIdentifier(element) then
+      begin
+        number := TrimLeadingZeros(element);
+        //raise rather than overflow into the next range. more than 4 digits never fits, and may be too large for StrToInt.
+        if (Length(number) > 4) or (preReleaseBase + StrToInt(number) > preReleaseMax) then
+          raise EArgumentOutOfRangeException.Create(Format('Cannot convert to a file version - the number [%s] in the pre-release tag [%s] is larger than %d',
+                                                           [element, FPreReleaseTag, preReleaseMax - preReleaseBase]));
+        build := preReleaseBase + StrToInt(number);
+        break;
+      end;
     end;
   end;
   result.Major := Major;
@@ -504,9 +590,9 @@ begin
     Exit('');
 
   if FPreReleaseTag = '' then
-    result := Format('%d.%d.%d',[Major, Minor, Patch])
+    result := Format('%u.%u.%u',[Major, Minor, Patch])
   else
-    result := Format('%d.%d.%d-%s',[Major, Minor, Patch,FPreReleaseTag]);
+    result := Format('%u.%u.%u-%s',[Major, Minor, Patch,FPreReleaseTag]);
   if FMetaData <> '' then
     result := result + '+' + FMetaData;
 end;
@@ -517,9 +603,9 @@ begin
     Exit('');
 
   if FPreReleaseTag = '' then
-    result := Format('%d.%d.%d',[Major, Minor, Patch])
+    result := Format('%u.%u.%u',[Major, Minor, Patch])
   else
-    result := Format('%d.%d.%d-%s',[Major, Minor, Patch,FPreReleaseTag]);
+    result := Format('%u.%u.%u-%s',[Major, Minor, Patch,FPreReleaseTag]);
 end;
 
 class function TSemanticVersion.TryParseWithError(const version: string; out value: TSemanticVersion; out error: string): boolean;
